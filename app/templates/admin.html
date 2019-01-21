@@ -1,0 +1,95 @@
+<html>
+	
+	<head>
+		<title>NCTU VJudge</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="../styles.css" type="text/css">
+	</head>
+
+
+	<body>
+		<a href = "{{ url_for('logout') }}"> Logout </a>
+	
+		{% block content %}
+
+			{% with err = get_flashed_messages() %}
+			{% if err %}
+				<h5> Error Messeges:
+				<div id="errorMsg">
+				<p>
+					<font color="red">{{err[0]}}</font>
+				</p>
+				</div>
+			{% endif %}
+			{% endwith %}
+
+
+		    <h3>Bulletins</h3>
+		    <div id="bulletinsDiv">
+
+		    	<table id="bulletins">
+
+		    		<tr>
+						<th>Bulletin ID</th>
+						<th>Content</th>
+						<th rowspan="2">Operations</th>
+					</tr>
+
+		    		{% for bul in buls %}
+					<tr class="oldBul">
+						<form action="bulletins" method="POST" id="{{ bul.bid }}">
+							<input hidden type="text" name="bid">{{ bul.bid }}</input>
+							<td>{{ bul.bid }}</td>
+							<td><textarea form="{{ bul.bid }}">
+								{{ bul.content }}
+							</textarea></td>
+							<td><button>SAVE</button>></td>
+							<td><button>DELETE</button>></td>
+						</form>
+					</tr>
+					{% endfor %}
+
+					<tr class="newBul">
+						<form action="bulletins" method="POST" id="newBulForm">
+							<input hidden type="text" name="bid">newForm</input>
+							<td>{{ NextBid }}</td>
+							<td><textarea form="newBulForm">
+							</textarea></td>
+							<td><button>SAVE</button>></td>
+						</form>
+					</tr>
+
+		    	</table>
+
+			</div>
+
+			<hr>
+			
+
+			<h1>Submissions</h1>
+			<div id = "submissionTable">
+				<table>
+					<tr>
+						<th>Submission ID</th>
+						<th>Problem</th>
+						<th>Result</th>
+						<th>Code</th>
+					</tr>
+					
+					{% for sub in subs %}
+					<tr>
+						<td>{{ sub["sid"] }}</td>
+						<td>{{ sub["problem"] }}</td>
+						<td class="{{sub['result']}}">{{ sub["result"] }}</td>
+						<td><a href = "/submission?sid={{ sub['sid'] }}">link</a></td>
+					</tr>
+					{% endfor %}	
+
+				</table>
+			</div>
+			
+		{% endblock %}
+
+	</body>
+
+</html>

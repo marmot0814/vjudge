@@ -1,0 +1,37 @@
+<html>
+	
+	<head>
+		<title>NCTU VJudge</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	</head>
+
+
+	<body>
+
+		{% block content %}
+		    <h1>Log In</h1>
+		    <form action="" method="post">
+		        {{ form.hidden_tag() }}
+		        <p>
+		            {{ form.username.label }}<br>
+		            {{ form.username(size=32) }}
+		        </p>
+		        <p>
+		            {{ form.password.label }}<br>
+		            {{ form.password(size=32) }}
+		        </p>
+		        <p>{{ form.submit() }}</p>
+		    </form>
+		{% endblock %}
+
+		{% with err = get_flashed_messages() %}
+		{% if err %}
+		<p>
+			<font color="red">{{err[0]}}</font>
+		</p>
+		{% endif %}
+		{% endwith %}
+
+	</body>
+
+</html>

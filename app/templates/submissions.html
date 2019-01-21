@@ -1,0 +1,106 @@
+<html>
+	
+	<head>
+		<title>NCTU VJudge</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="../styles.css" type="text/css">
+	</head>
+
+
+	<body>
+		<a href = "{{ url_for('logout') }}"> Logout </a>
+	
+		{% block content %}
+
+			{% with err = get_flashed_messages() %}
+			{% if err %}
+				<h5> Error Messeges:
+				<div id="errorMsg">
+				<p>
+					<font color="red">{{err[0]}}</font>
+				</p>
+				</div>
+			{% endif %}
+			{% endwith %}
+			
+			<h1>Submissions</h1>
+			<div id = "submissionBlock">
+				<table id = "submissionTable">
+					<tr>
+						<th>Submission ID</th>
+						<th>User</th>
+						<th>Problem</th>
+						<th>Submit Time</th>
+						<th>Result</th>
+						<th>Code</th>
+					</tr>
+
+				</table>
+
+				<div id = "pageOptionBlock">
+					<select id = "pageSel">
+					</select>
+					<input id = "pageSz" type = "number">
+				</div>
+			</div>
+			
+		{% endblock %}
+
+		<script>
+
+			$(function(){
+
+				function update()
+				{
+					let pageSel = $("#pageSel");
+					let pageSz = $("#pageSz").val() ? $("#pageSz").val() : 50;
+					let ori = pageSel.val() ? pageSel.val() : 1;
+					$.getJSON("/submissions?pageSz="+pageSz+"&page="+ori, 
+						function(rspData){
+							data = rspData.res
+							olds = $("#submissionTable tr+tr");
+							template = '<tr>\
+								<td> sub.sid </td>\
+								<td> sub.uid </td>\
+								<td> sub.problem </td>\
+								<td> sub.time </td>\
+								<td class=" sub.result "> sub.result </td>\
+								<td><a href = "/code?sid=sub.sid">link</a>  </td>\
+							</tr>';
+
+							for(let i = 0; i < olds.length; i++)
+								olds[i].remove();
+
+							for(let i = 0; i < data.length; i++)
+								$("#submissionTable tr:first").after(template.replace(new RegExp("sub.sid", 'g'), data[i]["sid"]).replace(new RegExp("sub.uid", 'g'), data[i]["uid"]).replace(new RegExp("sub.problem", 'g'), data[i]["problem"]).replace(new RegExp("sub.time", 'g'), data[i]["time"]).replace(new RegExp("sub.result", 'g'), data[i]["result"]));
+
+							let tot = parseInt(rspData.tot);
+
+							olds = $("#pageSel option");
+							for(let i = 0; i < olds.length; i++)
+								olds[i].remove();
+
+							for(let i = 1; i <= tot; i++)
+								pageSel.append($("<option></option>").attr("value", ""+i).attr("selected", i==ori).text(""+i));
+						});
+
+				}
+
+				$("#pageSel").change(function(){
+					update();
+				});
+
+				$("#pageSz").change(function(){
+					update();
+				});
+
+				update();
+				//setInterval(update, 5000);
+			});
+			
+		</script>
+
+
+	</body>
+
+</html>

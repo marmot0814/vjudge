@@ -1,0 +1,122 @@
+<html>
+	
+	<head>
+		<meta http-equiv="refresh" content="30">
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+		<title>NCTU VJudge</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="../styles.css" type="text/css">
+	</head>
+
+
+	<body>	
+		{% block content %}
+
+			{% with err = get_flashed_messages() %}
+			{% if err %}
+				<h5> Error Messeges:
+				<div id="errorMsg">
+				<p>
+					<font color="red">{{err[0]}}</font>
+				</p>
+				</div>
+			{% endif %}
+			{% endwith %}
+
+			<div id="allData" hidden>
+				{{ Data.data }}
+			</div>
+		{% endblock %}
+
+		<div id="scoreboardBlock">
+			<table id="scoreboardTable" align="center">
+				<thead>
+					<tr>	
+						<th>Rank</th>
+						<th>Team</th>
+						<th>Solved</th>
+						<th>Penalty</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr></tr>
+				</tbody>
+			</table>
+
+		</div>
+			
+		
+
+		<script>
+
+			$(function(){
+
+				var problemLen = 0;
+
+				function init()
+				{
+					var data = JSON.parse(document.getElementById("allData").innerHTML)["data"];
+					for(let i = 0; i < data["pids"].length; i++)
+					{
+						if( data["pids"][i] == 640 )
+							continue;
+
+
+						let html = "";
+						html += '<th class="scoreboard_problem_title">'
+						//html += data["problems"][data["pids"][i]];
+						html += String.fromCharCode('A'.charCodeAt()+i);
+						html += '</th>'
+						$("#scoreboardTable th:last").after(html);
+					}
+
+					for(let i = 0; i < data["users"].length; i++)
+					{
+						let uid = data["users"][i];
+						let html = '<tr id="' + uid + '">';
+						html += "<td>" + data["rank"][uid] + "</td>";
+						html += "<td>" + uid + "</td>";
+						html += "<td>" + data["solved"][uid] + "</td>";
+						html += "<td>" + data["penalty"][uid] + "</td>";
+
+						for(let j = 0; j < data["pids"].length; j++)
+						{
+							let pid = data["pids"][j];
+							let time = data["table"][uid][pid][0];
+							let trys = data["table"][uid][pid][1];
+							let result = "";
+			
+							if( time == null && trys == 0 )
+								html += "<td class = scoreboard_null>---/00</td>";
+							else if( time == null && trys > 0 )
+								html += "<td class = scoreboard_no>" + "---/" + trys + "</td>";
+							else if( time == -1 )
+								html += "<td class = scoreboard_pending>" + "???/" + trys + "</td>";
+							else if( data["first"][pid] != null && data["first"][pid][1] == uid )
+								html += "<td class = scoreboard_yes_first>" + time + "/" + trys + "</td>";
+							else
+								html += "<td class = scoreboard_yes>" + time + "/" + trys + "</td>";
+						}
+
+						html += "</tr>";
+
+						$("#scoreboardTable > tbody tr:last").after(html);
+					}
+
+				}
+
+				
+
+				init();
+				/*setInterval(function()
+				{
+					window.location.reload(1);
+				}, 30000);*/
+			});
+			
+		</script>
+
+
+	</body>
+
+</html>

@@ -1,0 +1,124 @@
+<html>
+	
+	<head>
+		<title>NCTU VJudge</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="../styles.css">
+	</head>
+
+
+	<body>
+		<a href = "{{ url_for('logout') }}"> Logout </a>
+		
+		{% block content %}
+
+			{% with err = get_flashed_messages() %}
+			{% if err %}
+				<h5> Error Messeges:
+				<div id="errorMsg">
+				<p>
+					<font color="red">{{err[0]}}</font>
+				</p>
+				</div>
+			{% endif %}
+			{% endwith %}
+
+			<br>
+			<input type="checkbox" id="updating" value="updating" checked> auto update
+			<br>
+		    <h3>Bulletins</h3>
+		    <div id="bulletinsDiv">
+
+		    	<table id="bulletins">
+
+		    		<tr>
+						<th>Bulletin ID</th>
+						<th>Type</th>
+						<th>User</th>
+						<th>Content</th>
+						<th colpan="2">Operations</th>
+					</tr>
+
+					<tbody>
+					<tr class="newBul">
+						<form action="bulletins" method="POST" id="newBulForm">
+							<td>new</td>
+							<td><select name="type">
+								<option value="general" selected> General </option>
+								<option value="clarification"> Clarification </option>
+								<option value="warning"> Warning </option>
+							</select></td>
+							<td>{{ current_user.uid }}</td>
+							<td>
+								<textarea form="newBulForm" name="data" rows="4" cols="80"></textarea>
+							</td>
+							<td><input type="submit" name="Save" value="Save"></input></td>
+							<td><input type="reset"  value="Clear"></input></td>
+						</form>
+					</tr>
+					</tbody>
+		    	</table>
+
+			</div>
+			
+		{% endblock %}
+
+
+		<script type="text/javascript">
+			$(function(){
+
+				function update()
+				{
+						$.getJSON("/bulletins",
+		                function(data){
+		                	buls = data.buls;
+							olds = $(".oldBul");
+
+							template = '<tr class = "oldBul"><form action="bulletins" method="POST" id="bul.bid">\
+											<input form = "bul.bid" type="hidden" name="bid" value="bul.bid"></input>\
+											<td> bul.bid </td>\
+											<td><select form = "bul.bid" name="type">\
+											<option value="general" gen_sel > General </option>\
+											<option value="clarification" cari_sel > Clarification </option>\
+											<option value="warning" warn_sel > Warning </option>\
+											<option value="asking" ask_sel > Asking </option>\
+											</select></td>\
+											<td> bul.uid </td>\
+											<td><textarea form="bul.bid" name="data" class="bul.typ" rows="4" cols="80">bul.data</textarea></td>\
+											<td><input form = "bul.bid" type="submit" name="Save" value="Save"></input></td>\
+											<td><input form = "bul.bid" type="submit" name="Delete" value="Delete"></input></td>\
+										</form></tr>';
+
+							for(let i = 0; i < olds.length; i++)
+								olds[i].remove();
+
+							for(let i = 0; i < Object.keys(buls).length; i++)
+								$("#bulletins tr:last").before(template.replace(new RegExp("bul.bid", 'g'), buls[i].bid).replace(new RegExp("bul.typ", 'g'), buls[i].typ).replace(new RegExp("bul.data", 'g'), buls[i].data).replace(new RegExp("bul.uid", 'g'), buls[i].uid).replace("gen_sel", buls[i].typ=="general" ? "selected" : "").replace("cari_sel", buls[i].typ=="clarification" ? "selected" : "").replace("warn_sel", buls[i].typ=="warning" ? "selected" : "").replace("ask_sel", buls[i].typ=="asking" ? "selected" : ""));
+						});
+				}
+
+				update();
+				var id = setInterval(update, 5000);
+				var updating = true;
+
+				$("#updating").click(function(){
+					if(updating)
+					{
+						clearInterval(id);
+						updating=false;
+					}
+					else
+					{
+						id = setInterval(update, 5000);
+						updating=true;
+					}
+				});
+
+
+			});
+
+		</script>>
+
+	</body>
+
+</html>

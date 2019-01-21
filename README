@@ -1,0 +1,24 @@
+
+Installation:
+	sudo ./install.sh
+
+Setting:
+	Contest:
+		Modify data/config.json
+	Port:
+		Modify start.sh
+	Ban IP:
+		Modify ok_addr in app/route.py
+	Teams:
+		Modify data/accounts with the following format:
+			team_name \t password \t is_admin \n
+
+Initialization:
+	./initial.sh
+
+Start server:
+	./start.sh
+
+Stop server:
+	^C
+

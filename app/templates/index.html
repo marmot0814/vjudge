@@ -1,0 +1,250 @@
+<html>	
+	
+	<head>
+		<title>NCTU VJudge</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<link rel="stylesheet" href="styles.css" type="text/css">
+	</head>
+
+
+	<body>
+		<p hidden> Hi {{ current_user.uid }} </p>
+		<a href = "{{ url_for('logout') }}" hidden> Logout </a>
+		<a href = "/problems"> Download Problems </a>
+		<form action='https://dictionary.cambridge.org/us/search/english-chinese-traditional/direct/' target='_blank' hidden>
+			<table> <tbody> <tr>
+						<td style='width:150px;padding:4px;'> <input style='width:100%;border:1px black solid;border-radius:4px;padding:1px 1px 0 4px;' name='q' placeholder='Dictionary'> </td>
+						<td style='width:50px;padding:4px;'> <input style='width:100%;border:none;background:#FFCC16;' type='submit' value='Look it up'> </td>
+					</tr> </tbody> </table> </form>
+
+		<p id = "contest_start_time" hidden></p>
+		<p id = "contest_end_time" hidden></p>
+		<div id="timer">
+				<p id="remain"></p>
+				<p id="timer_suffix">To End</p>
+
+		</div>
+		{% block content %}
+
+			
+			{% with err = get_flashed_messages() %}
+			{% if err %}
+				<h5> Error Messeges:
+				<div id="errorMsg">
+				<p>
+					<font color="red">{{err[0]}}</font>
+				</p>
+				</div>
+				<hr>
+			{% endif %}
+			{% endwith %}
+
+			<h1>Bulletins</h1>
+			<div id="bulletinsBlock">
+
+		    	<table id="bulletinsTable">
+
+		    		<tr>
+						<th>Bulletin ID</th>
+						<th>Type</th>
+						<th>Content</th>
+					</tr>
+					<tbody>
+
+					<tr class="newBul">
+						<form action="ask" method="POST" id="newBulForm">
+							<input type="hidden" name="bid" value="{{ NextBid }}"></input>
+							<td colspan="2">Ask a Question</td>
+							<input type="hidden" name="type" value="asking"></input>
+							<td>
+								<textarea form="newBulForm" name="data" rows="4"	 cols="100" style="border:solid 1px"></textarea>
+							</td>
+							<td><input type="submit" name="Submit" value="Submit"></input></td>
+						</form>
+					</tr>
+					</tbody>
+		    	</table>
+
+			</div>
+
+			<hr>
+
+		    <h1>Submit</h1>
+		    <div id="submitBlock">
+			    <form action="submit" method="post" enctype="multipart/form-data">
+			        {{ form.hidden_tag() }}
+			        <p>
+			            {{ form.problem.label }}<br>
+			            {{ form.problem }}
+			        </p>
+			        <p>
+			            {{ form.language.label }}<br>
+			            {{ form.language }}
+			        </p>
+			        <p>
+			            Select Source Code<br>
+			            {{ form.code }}
+			        </p>
+			        <p>
+			        Good Luck<br>
+			        {{ form.submit() }}
+			    	</p>
+			    </form>
+			</div>
+
+			<hr>
+			
+
+			<h1>Submissions</h1>
+			<div id = "submissionBlock">
+				<table id = "submissionTable">
+					<tr>
+						<th>Submission ID</th>
+						<th>Problem</th>
+						<th>Submit Time</th>
+						<th>Result</th>
+						<th>Code</th>
+					</tr>
+				</table>
+				<div id = "pageOptionBlock">
+					<select id = "pageSel">
+					</select>
+				</div>
+			</div>
+			
+		{% endblock %}
+
+
+		<script>
+
+			$(function(){
+
+				function setTime()
+				{
+					var timer = setInterval(function() {
+						let startTime = document.getElementById("contest_start_time").innerHTML
+						let endTime = document.getElementById("contest_end_time").innerHTML
+						startTime = new Date(startTime).getTime();
+						endTime = new Date(endTime).getTime();
+						let now = new Date().getTime();
+
+						if( startTime > now )	//contest haven't started
+						{
+							clearInterval(timer);
+							location.reload();
+						}
+
+						let distance = Math.floor((endTime - now)/1000);
+						let h = Math.floor(distance/60/60);
+						let m = Math.floor((distance%(60*60))/60);
+						let s = distance%60;
+						document.getElementById("remain").innerHTML = h + "h " + m + "m " + s + "s ";
+						if (distance < 0) {
+							clearInterval(timer);
+							document.getElementById("remain").innerHTML = "STOPPED";
+							document.getElementById("timer_suffix").innerHTML = "";
+						}
+					}, 1000);		
+				}
+
+				function updateTime()
+				{
+					$.getJSON('/getContestTime',
+						function(data){
+							$("#contest_start_time").text(data["start"]);
+							$("#contest_end_time").text(data["end"]);
+						});
+				}
+
+				function updateBulletins()
+				{
+					$.getJSON("/bulletins",
+		                function(data){
+		                	buls = data.buls;
+							olds = $(".oldBul");
+							template = '<tr class="oldBul">\
+									<input hidden type="text" name="bid" value=" bul.bid "></input>\
+									<td> bul.bid </td>\
+									<td> bul.typ </td>\
+									<td class=><textarea class=" bul.typ " cols="100" rows="5">bul.data</textarea>\
+							</tr>';
+
+							for(let i = 0; i < olds.length; i++)
+								olds[i].remove();
+
+							for(let i = 0; i < Object.keys(buls).length; i++)
+								$("#bulletinsTable tr:last").before(template.replace(new RegExp("bul.bid", 'g'), buls[i].bid).replace(new RegExp("bul.typ", 'g'), buls[i].typ).replace(new RegExp("bul.data", 'g'), buls[i].data));
+						});
+				}
+
+				function updateSubmissions()
+				{
+					let pageSel = $("#pageSel");
+					let ori = pageSel.val() ? pageSel.val() : 1;
+					$.getJSON("/submissions?page="+ori, 
+						function(rspData){
+							let data = rspData.res
+							let olds = $("#submissionTable tr+tr");
+							let template = '<tr>\
+								<td> sub.sid </td>\
+								<td> sub.problem </td>\
+								<td> sub.time </td>\
+								<td class=" sub.result "> sub.result </td>\
+								<td><a href = "/code?sid=sub.sid">link</a>  </td>\
+							</tr>';
+
+							for(let i = 0; i < olds.length; i++)
+								olds[i].remove();
+
+							for(let i = 0; i < data.length; i++)
+								$("#submissionTable tr:first").after(template.replace(new RegExp("sub.sid", 'g'), data[i]["sid"]).replace(new RegExp("sub.problem", 'g'), data[i]["problem"]).replace(new RegExp("sub.time", 'g'), data[i]["time"]).replace(new RegExp("sub.result", 'g'), data[i]["result"]));
+
+							let tot = parseInt(rspData.tot);
+
+							olds = $("#pageSel option");
+							for(let i = 0; i < olds.length; i++)
+								olds[i].remove();
+
+							for(let i = 1; i <= tot; i++)
+								pageSel.append($("<option></option>").attr("value", ""+i).attr("selected", i==ori).text(""+i));
+						});
+				}
+
+				$("#pageSel").change(function(){
+					updateSubmissions();
+				});
+				/*
+				$(":input[type='submit']").prop("disabled", true);
+
+				$(":input[type='submit']").val(20);
+
+				
+				setTimeout(function(){
+					$(":input[type='submit']").prop("disabled", false);
+					$(":input[type='submit']").val("submit");
+					clearInterval(submitIter);
+				}, 20000);
+
+				var submitIter = setInterval(function(){
+					let cur = $(":input[type='submit']").val();
+					$(":input[type='submit']").val(parseInt(cur)-1);
+				}, 1000);
+				*/
+
+				updateTime();
+				updateBulletins();
+				updateSubmissions();
+
+				setTime();
+				setInterval(updateBulletins, 5000);
+				setInterval(updateSubmissions, 3000);
+				setInterval(updateTime, 15000);
+			});
+			
+		</script>
+
+
+
+	</body>
+
+</html>
